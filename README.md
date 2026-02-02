@@ -268,4 +268,4 @@ Contacto: [Tu información de contacto]
 
 ## 📄 Licencia
 
-Proyecto privado - Supermercados Bravo © 2025
+Proyecto privado - DAN ASER DIAZ
