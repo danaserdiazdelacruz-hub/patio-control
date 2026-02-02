@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Patio - Supermercados Bravo</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">🚛</div>
+        <h1 class="login-title">Control de Patio</h1>
+        <p class="login-subtitle">Centro de Distribución</p>
+      </div>
+      
+      <div id="loginError" class="login-error">
+        Código o PIN incorrecto
+      </div>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label">Código de Usuario</label>
+          <input 
+            type="text" 
+            id="codigo" 
+            class="form-input" 
+            placeholder="Ej: LOG001"
+            autocomplete="off"
+            required
+          >
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">PIN</label>
+          <input 
+            type="password" 
+            id="pin" 
+            class="form-input" 
+            placeholder="••••"
+            maxlength="4"
+            required
+          >
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%">
+          Ingresar
+        </button>
+      </form>
+      
+      <div style="margin-top: 1.5rem; text-align: center;">
+        <p class="text-muted" style="font-size: 0.8rem;">
+          Acceso rápido (demo):
+        </p>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; justify-content: center;">
+          <button class="btn btn-ghost btn-sm" onclick="quickLogin('LOG001', '1234')">
+            Logística
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="quickLogin('DES001', '1234')">
+            Despacho
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="quickLogin('CHO001', '1234')">
+            Chofer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '';  // Mismo servidor
+    
+    // Verificar si ya hay sesión
+    const usuario = localStorage.getItem('usuario');
+    if (usuario) {
+      const user = JSON.parse(usuario);
+      redirectByRole(user.rol);
+    }
+    
+    function redirectByRole(rol) {
+      switch(rol) {
+        case 'admin':
+        case 'logistica':
+          window.location.href = '/admin';
+          break;
+        case 'despacho':
+          window.location.href = '/despacho';
+          break;
+        case 'chofer':
+          window.location.href = '/chofer';
+          break;
+        default:
+          window.location.href = '/admin';
+      }
+    }
+    
+    function quickLogin(codigo, pin) {
+      document.getElementById('codigo').value = codigo;
+      document.getElementById('pin').value = pin;
+      document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+    }
+    
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const codigo = document.getElementById('codigo').value.toUpperCase();
+      const pin = document.getElementById('pin').value;
+      const errorDiv = document.getElementById('loginError');
+      
+      try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo, pin })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          localStorage.setItem('usuario', JSON.stringify(data.usuario));
+          redirectByRole(data.usuario.rol);
+        } else {
+          errorDiv.classList.add('active');
+          document.getElementById('pin').value = '';
+          document.getElementById('pin').focus();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        errorDiv.textContent = 'Error de conexión. Intente nuevamente.';
+        errorDiv.classList.add('active');
+      }
+    });
+  </script>
+</body>
+</html>

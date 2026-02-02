@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chofer - Control de Patio</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    /* Estilos específicos para móvil */
+    body {
+      background: linear-gradient(180deg, #0a0a0f 0%, #12121a 100%);
+    }
+    
+    .chofer-app {
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .chofer-header {
+      text-align: center;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .chofer-logo {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .chofer-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .chofer-subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    
+    .chofer-user {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border-radius: 999px;
+      display: inline-flex;
+      margin: 1rem auto 0;
+    }
+    
+    .chofer-user-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--color-disponible);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    .chofer-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 0;
+    }
+    
+    /* Estado actual */
+    .estado-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .estado-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+    
+    .estado-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+    
+    .estado-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    .estado-dot.disponible { background: var(--color-disponible); }
+    .estado-dot.en-camino { background: var(--color-en-camino); }
+    .estado-dot.en-rampa { background: var(--color-en-rampa); }
+    .estado-dot.carga-lista { background: var(--color-carga-lista); }
+    .estado-dot.inactivo { background: var(--text-muted); animation: none; }
+    
+    /* Rampa asignada */
+    .rampa-card {
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+      animation: fadeInUp 0.5s ease-out;
+    }
+    
+    .rampa-card.urgente {
+      background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%);
+      box-shadow: 0 10px 40px rgba(239, 68, 68, 0.3);
+      animation: pulse-urgente 1.5s infinite;
+    }
+    
+    @keyframes pulse-urgente {
+      0%, 100% { box-shadow: 0 10px 40px rgba(239, 68, 68, 0.3); }
+      50% { box-shadow: 0 10px 60px rgba(239, 68, 68, 0.5); }
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .rampa-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+    }
+    
+    .rampa-numero {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 5rem;
+      font-weight: 700;
+      line-height: 1;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    
+    .rampa-nombre {
+      margin-top: 0.5rem;
+      opacity: 0.8;
+    }
+    
+    .rampa-timer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* Botón principal */
+    .btn-confirmar {
+      width: 100%;
+      padding: 1.25rem;
+      font-size: 1.1rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
+    
+    /* Info del camión */
+    .camion-info {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .camion-placa {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .camion-tipo {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    
+    /* Historial */
+    .historial-section {
+      margin-top: auto;
+    }
+    
+    .historial-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .historial-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+    
+    .historial-rampa {
+      font-weight: 600;
+    }
+    
+    .historial-tiempo {
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+    
+    /* Footer */
+    .chofer-footer {
+      padding: 1rem 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    
+    /* Sin asignación */
+    .sin-asignacion {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+    
+    .sin-asignacion-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+    
+    .sin-asignacion-text {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .sin-asignacion-sub {
+      font-size: 0.85rem;
+    }
+    
+    /* Notificación flotante */
+    .notification-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+      padding: 1rem;
+    }
+    
+    .notification-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .notification-card {
+      background: var(--bg-card);
+      border: 3px solid var(--accent-blue);
+      border-radius: 24px;
+      padding: 2rem;
+      text-align: center;
+      width: 100%;
+      max-width: 360px;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+      box-shadow: 0 0 60px rgba(59, 130, 246, 0.4);
+    }
+    
+    .notification-overlay.active .notification-card {
+      transform: scale(1);
+    }
+    
+    .notification-card.urgente {
+      border-color: var(--accent-red);
+      box-shadow: 0 0 60px rgba(239, 68, 68, 0.4);
+      animation: shake-notification 0.5s ease-in-out;
+    }
+    
+    @keyframes shake-notification {
+      0%, 100% { transform: scale(1) translateX(0); }
+      25% { transform: scale(1) translateX(-10px); }
+      75% { transform: scale(1) translateX(10px); }
+    }
+    
+    .notification-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    .notification-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    .notification-rampa {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 4rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin: 1rem 0;
+    }
+    
+    .notification-card.urgente .notification-rampa {
+      color: var(--accent-red);
+    }
+    
+    .notification-message {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+    
+    .notification-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .notification-actions .btn {
+      width: 100%;
+      padding: 1rem;
+    }
+    
+    /* Audio indicator */
+    .audio-playing {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: var(--accent-blue);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      display: none;
+      z-index: 3000;
+    }
+    
+    .audio-playing.active {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Indicador de audio -->
+  <div class="audio-playing" id="audioIndicator">
+    🔊 Reproduciendo alerta
+  </div>
+  
+  <!-- Notificación flotante -->
+  <div class="notification-overlay" id="notificationOverlay">
+    <div class="notification-card" id="notificationCard">
+      <div class="notification-icon">🚨</div>
+      <div class="notification-title">¡ASIGNACIÓN DE RAMPA!</div>
+      <div class="notification-rampa" id="notificationRampa">R5</div>
+      <div class="notification-message" id="notificationMessage">
+        Diríjase a la rampa asignada
+      </div>
+      <div class="notification-actions">
+        <button class="btn btn-primary btn-lg" onclick="confirmarAsignacion()">
+          ✓ CONFIRMAR RECIBIDO
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- App principal -->
+  <div class="chofer-app">
+    <!-- Header -->
+    <header class="chofer-header">
+      <div class="chofer-logo">🚛</div>
+      <div class="chofer-title">Control de Patio</div>
+      <div class="chofer-subtitle">Panel del Chofer</div>
+      <div class="chofer-user">
+        <span class="chofer-user-dot"></span>
+        <span id="userName">Chofer</span>
+      </div>
+    </header>
+    
+    <!-- Contenido principal -->
+    <main class="chofer-main">
+      <!-- Estado actual -->
+      <div class="estado-card">
+        <div class="estado-label">Estado Actual</div>
+        <div class="estado-value">
+          <span class="estado-dot" id="estadoDot"></span>
+          <span id="estadoTexto">Cargando...</span>
+        </div>
+      </div>
+      
+      <!-- Info del camión -->
+      <div class="camion-info" id="camionInfo" style="display: none;">
+        <div>
+          <div class="camion-placa" id="camionPlaca">--</div>
+          <div class="camion-tipo" id="camionTipo">--</div>
+        </div>
+        <span class="badge badge-tipo" id="camionBadge">--</span>
+      </div>
+      
+      <!-- Contenido dinámico según estado -->
+      <div id="contenidoDinamico">
+        <!-- Se llena con JavaScript -->
+      </div>
+      
+      <!-- Historial del día -->
+      <div class="historial-section">
+        <div class="historial-title">
+          📋 Viajes de Hoy
+        </div>
+        <div id="historialList">
+          <!-- Se llena dinámicamente -->
+        </div>
+      </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="chofer-footer">
+      <button class="btn btn-ghost btn-sm" onclick="logout()">
+        Cerrar Sesión
+      </button>
+    </footer>
+  </div>
+  
+  <!-- Audio para notificaciones -->
+  <audio id="audioAlerta" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQAA" type="audio/wav">
+  </audio>
+
+  <script>
+    const API_URL = '';
+    let ws = null;
+    let usuario = null;
+    let movimientoActual = null;
+    let timerInterval = null;
+    let pendingNotification = null;
+    
+    // ========================================
+    // INICIALIZACIÓN
+    // ========================================
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      const userStr = localStorage.getItem('usuario');
+      if (!userStr) {
+        window.location.href = '/';
+        return;
+      }
+      
+      usuario = JSON.parse(userStr);
+      
+      // Verificar que sea chofer
+      if (usuario.rol !== 'chofer') {
+        alert('Acceso no autorizado');
+        window.location.href = '/';
+        return;
+      }
+      
+      document.getElementById('userName').textContent = usuario.nombre;
+      
+      // Cargar datos
+      loadEstado();
+      loadHistorial();
+      
+      // WebSocket
+      connectWebSocket();
+      
+      // Actualizar cada 10 segundos
+      setInterval(loadEstado, 10000);
+      setInterval(loadHistorial, 60000);
+      
+      // Solicitar permisos de notificación
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    });
+    
+    function logout() {
+      localStorage.removeItem('usuario');
+      if (ws) ws.close();
+      window.location.href = '/';
+    }
+    
+    // ========================================
+    // WEBSOCKET
+    // ========================================
+    
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}/ws/${usuario.id}`);
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('WS Mensaje:', data);
+        
+        // Manejar diferentes tipos de notificaciones
+        switch(data.tipo) {
+          case 'asignacion_rampa':
+            mostrarNotificacion(data);
+            break;
+          case 'carga_lista':
+            mostrarNotificacionCargaLista(data);
+            break;
+          default:
+            loadEstado();
+        }
+      };
+      
+      ws.onclose = () => {
+        console.log('WebSocket cerrado, reconectando...');
+        setTimeout(connectWebSocket, 3000);
+      };
+      
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    }
+    
+    // ========================================
+    // CARGAR ESTADO
+    // ========================================
+    
+    async function loadEstado() {
+      try {
+        const response = await fetch(`${API_URL}/api/chofer/${usuario.id}/movimiento-activo`);
+        const movimiento = await response.json();
+        
+        movimientoActual = movimiento;
+        renderEstado(movimiento);
+        
+      } catch (error) {
+        console.error('Error cargando estado:', error);
+        renderEstado(null);
+      }
+    }
+    
+    function renderEstado(movimiento) {
+      const estadoDot = document.getElementById('estadoDot');
+      const estadoTexto = document.getElementById('estadoTexto');
+      const camionInfo = document.getElementById('camionInfo');
+      const contenido = document.getElementById('contenidoDinamico');
+      
+      if (!movimiento) {
+        // Sin movimiento activo
+        estadoDot.className = 'estado-dot inactivo';
+        estadoTexto.textContent = 'Sin asignación';
+        camionInfo.style.display = 'none';
+        
+        contenido.innerHTML = `
+          <div class="sin-asignacion">
+            <div class="sin-asignacion-icon">🅿️</div>
+            <div class="sin-asignacion-text">En espera</div>
+            <div class="sin-asignacion-sub">Recibirás una notificación cuando te asignen una rampa</div>
+          </div>
+        `;
+        return;
+      }
+      
+      // Mostrar info del camión
+      camionInfo.style.display = 'flex';
+      document.getElementById('camionPlaca').textContent = movimiento.camion?.placa || '--';
+      document.getElementById('camionTipo').textContent = `Tipo: ${movimiento.camion?.tipo || '--'}`;
+      document.getElementById('camionBadge').textContent = movimiento.camion?.tipo || '--';
+      
+      // Renderizar según estado
+      switch(movimiento.estado) {
+        case 'ingresado_garita':
+        case 'disponible_patio':
+          estadoDot.className = 'estado-dot disponible';
+          estadoTexto.textContent = 'Disponible en Patio';
+          contenido.innerHTML = `
+            <div class="sin-asignacion">
+              <div class="sin-asignacion-icon">⏳</div>
+              <div class="sin-asignacion-text">Esperando asignación</div>
+              <div class="sin-asignacion-sub">Mantente atento a las notificaciones</div>
+            </div>
+          `;
+          break;
+          
+        case 'solicitado':
+          estadoDot.className = 'estado-dot disponible';
+          estadoTexto.textContent = 'Solicitado por Despacho';
+          contenido.innerHTML = `
+            <div class="sin-asignacion">
+              <div class="sin-asignacion-icon">📋</div>
+              <div class="sin-asignacion-text">Despacho te solicitó</div>
+              <div class="sin-asignacion-sub">Logística te asignará una rampa pronto</div>
+            </div>
+          `;
+          break;
+          
+        case 'asignado_en_camino':
+          estadoDot.className = 'estado-dot en-camino';
+          estadoTexto.textContent = 'En Camino a Rampa';
+          renderRampaAsignada(movimiento, false);
+          break;
+          
+        case 'en_rampa':
+          estadoDot.className = 'estado-dot en-rampa';
+          estadoTexto.textContent = 'En Rampa - Cargando';
+          renderEnRampa(movimiento);
+          break;
+          
+        case 'carga_lista':
+          estadoDot.className = 'estado-dot carga-lista';
+          estadoTexto.textContent = '¡Carga Lista!';
+          renderCargaLista(movimiento);
+          break;
+          
+        default:
+          estadoDot.className = 'estado-dot inactivo';
+          estadoTexto.textContent = movimiento.estado;
+      }
+    }
+    
+    function renderRampaAsignada(movimiento, urgente) {
+      const contenido = document.getElementById('contenidoDinamico');
+      const rampa = movimiento.rampa;
+      
+      contenido.innerHTML = `
+        <div class="rampa-card ${urgente || movimiento.prioridad === 'urgente' || movimiento.prioridad === 'critico' ? 'urgente' : ''}">
+          <div class="rampa-label">DIRÍJASE A</div>
+          <div class="rampa-numero">R${rampa?.numero || '--'}</div>
+          <div class="rampa-nombre">${rampa?.nombre || ''}</div>
+          <div class="rampa-timer">
+            <span>⏱️</span>
+            <span id="timerEnCamino">00:00</span>
+          </div>
+        </div>
+        
+        ${!movimiento.hora_confirmado_chofer ? `
+          <button class="btn btn-primary btn-confirmar" onclick="confirmarAsignacion()">
+            ✓ CONFIRMAR QUE VOY EN CAMINO
+          </button>
+        ` : `
+          <div style="text-align: center; color: var(--color-disponible); margin-bottom: 1rem;">
+            ✓ Confirmado - En camino
+          </div>
+        `}
+      `;
+      
+      // Iniciar timer
+      startTimer(movimiento.hora_asignado, 'timerEnCamino');
+    }
+    
+    function renderEnRampa(movimiento) {
+      const contenido = document.getElementById('contenidoDinamico');
+      const rampa = movimiento.rampa;
+      
+      contenido.innerHTML = `
+        <div class="rampa-card">
+          <div class="rampa-label">EN RAMPA</div>
+          <div class="rampa-numero">R${rampa?.numero || '--'}</div>
+          <div class="rampa-nombre">${rampa?.nombre || ''}</div>
+          <div class="rampa-timer">
+            <span>⏱️ Tiempo en rampa:</span>
+            <span id="timerEnRampa">00:00</span>
+          </div>
+        </div>
+        
+        <div style="text-align: center; color: var(--text-secondary); padding: 1rem;">
+          <p>Esperando que termine la carga...</p>
+          <p style="font-size: 0.85rem; margin-top: 0.5rem;">Recibirás notificación cuando esté lista</p>
+        </div>
+      `;
+      
+      startTimer(movimiento.hora_en_rampa, 'timerEnRampa');
+    }
+    
+    function renderCargaLista(movimiento) {
+      const contenido = document.getElementById('contenidoDinamico');
+      const rampa = movimiento.rampa;
+      
+      contenido.innerHTML = `
+        <div class="rampa-card" style="background: linear-gradient(135deg, #065f46 0%, #10b981 100%); box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);">
+          <div class="rampa-label">✓ CARGA LISTA</div>
+          <div class="rampa-numero">R${rampa?.numero || '--'}</div>
+          <div class="rampa-nombre">Puede retirarse</div>
+        </div>
+        
+        <div style="text-align: center; padding: 1rem;">
+          <p style="color: var(--color-disponible); font-size: 1.1rem; font-weight: 600;">
+            ¡Listo para salir!
+          </p>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+            Diríjase a la salida del CD
+          </p>
+        </div>
+      `;
+    }
+    
+    function startTimer(horaInicio, elementId) {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      const updateTimer = () => {
+        const element = document.getElementById(elementId);
+        if (!element || !horaInicio) return;
+        
+        const inicio = new Date(horaInicio);
+        const ahora = new Date();
+        const diffMs = ahora - inicio;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffSecs = Math.floor((diffMs % 60000) / 1000);
+        
+        element.textContent = `${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+      };
+      
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+    
+    // ========================================
+    // NOTIFICACIONES
+    // ========================================
+    
+    function mostrarNotificacion(data) {
+      pendingNotification = data;
+      
+      const overlay = document.getElementById('notificationOverlay');
+      const card = document.getElementById('notificationCard');
+      const rampaEl = document.getElementById('notificationRampa');
+      const messageEl = document.getElementById('notificationMessage');
+      
+      rampaEl.textContent = `R${data.rampa}`;
+      messageEl.textContent = data.mensaje || 'Diríjase a la rampa asignada';
+      
+      // Verificar si es urgente
+      if (data.mensaje && (data.mensaje.includes('URGENTE') || data.mensaje.includes('CRITICO'))) {
+        card.classList.add('urgente');
+      } else {
+        card.classList.remove('urgente');
+      }
+      
+      overlay.classList.add('active');
+      
+      // Reproducir sonido
+      playAlertSound();
+      
+      // Notificación del navegador
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('🚛 Asignación de Rampa', {
+          body: `Diríjase a la Rampa ${data.rampa}`,
+          icon: '🚛',
+          requireInteraction: true
+        });
+      }
+      
+      // Vibrar si es móvil
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200, 100, 200]);
+      }
+    }
+    
+    function mostrarNotificacionCargaLista(data) {
+      const overlay = document.getElementById('notificationOverlay');
+      const card = document.getElementById('notificationCard');
+      
+      card.innerHTML = `
+        <div class="notification-icon">✅</div>
+        <div class="notification-title">¡CARGA LISTA!</div>
+        <div class="notification-rampa" style="color: var(--color-disponible);">✓</div>
+        <div class="notification-message">
+          ${data.mensaje || 'Su carga está lista. Puede retirarse de la rampa.'}
+        </div>
+        <div class="notification-actions">
+          <button class="btn btn-success btn-lg" onclick="cerrarNotificacion()">
+            ENTENDIDO
+          </button>
+        </div>
+      `;
+      
+      overlay.classList.add('active');
+      playAlertSound();
+      
+      if ('vibrate' in navigator) {
+        navigator.vibrate([300, 100, 300]);
+      }
+    }
+    
+    function cerrarNotificacion() {
+      document.getElementById('notificationOverlay').classList.remove('active');
+      loadEstado();
+    }
+    
+    async function confirmarAsignacion() {
+      if (!movimientoActual && !pendingNotification) {
+        cerrarNotificacion();
+        return;
+      }
+      
+      const movimientoId = pendingNotification?.movimiento_id || movimientoActual?.id;
+      
+      if (!movimientoId) {
+        cerrarNotificacion();
+        return;
+      }
+      
+      try {
+        await fetch(`${API_URL}/api/movimientos/${movimientoId}/confirmar-chofer`, {
+          method: 'POST'
+        });
+        
+        pendingNotification = null;
+        cerrarNotificacion();
+        loadEstado();
+        
+      } catch (error) {
+        console.error('Error confirmando:', error);
+        alert('Error al confirmar. Intente nuevamente.');
+      }
+    }
+    
+    function playAlertSound() {
+      // Crear sonido de alerta con Web Audio API
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+        
+        oscillator.start();
+        
+        // Beep pattern
+        setTimeout(() => { oscillator.frequency.value = 1000; }, 150);
+        setTimeout(() => { oscillator.frequency.value = 800; }, 300);
+        setTimeout(() => { oscillator.frequency.value = 1000; }, 450);
+        setTimeout(() => { oscillator.stop(); }, 600);
+        
+        document.getElementById('audioIndicator').classList.add('active');
+        setTimeout(() => {
+          document.getElementById('audioIndicator').classList.remove('active');
+        }, 1000);
+        
+      } catch (e) {
+        console.log('No se pudo reproducir audio:', e);
+      }
+    }
+    
+    // ========================================
+    // HISTORIAL
+    // ========================================
+    
+    async function loadHistorial() {
+      try {
+        const hoy = new Date().toISOString().split('T')[0];
+        const response = await fetch(`${API_URL}/api/movimientos?fecha=${hoy}&limit=10`);
+        const movimientos = await response.json();
+        
+        // Filtrar solo los de este chofer (por camión)
+        const misMovimientos = movimientos.filter(m => 
+          m.camion?.chofer?.id === usuario.id && 
+          m.estado === 'salida_cd'
+        );
+        
+        renderHistorial(misMovimientos);
+        
+      } catch (error) {
+        console.error('Error cargando historial:', error);
+      }
+    }
+    
+    function renderHistorial(movimientos) {
+      const container = document.getElementById('historialList');
+      
+      if (movimientos.length === 0) {
+        container.innerHTML = `
+          <div class="historial-item">
+            <span class="text-muted">Sin viajes completados hoy</span>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = movimientos.map(m => {
+        const duracion = m.hora_en_rampa && m.hora_salida_rampa
+          ? Math.floor((new Date(m.hora_salida_rampa) - new Date(m.hora_en_rampa)) / 60000)
+          : '--';
+        
+        return `
+          <div class="historial-item">
+            <span class="historial-rampa">Rampa ${m.rampa?.numero || '--'}</span>
+            <span class="historial-tiempo">${duracion} min</span>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
