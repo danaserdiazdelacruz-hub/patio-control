@@ -1,7 +1,5 @@
 """
 API Principal - Control de Patio y Asignación de Rampas
-Centro de Distribución Supermercados Bravo
-"""
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
